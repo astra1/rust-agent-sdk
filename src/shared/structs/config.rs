@@ -1,6 +1,8 @@
+
 use serde::{Deserialize, Serialize};
+
 #[dervive(Serialize, Deserialize, Debug)]
-struct Config {
+pub struct Config {
     accountId: u32,
     username: str,
     password: str,

@@ -17,7 +17,7 @@ struct CSDSClient {
     convert: fn(HashMap),
 }
 
-impl CSDSClient {
+pub impl CSDSClient {
     fn new(conf: Config) -> Self {
         Self {
             cache,
@@ -29,28 +29,18 @@ impl CSDSClient {
         }
     }
 
-    fn getAll(self) {
+    pub fn getAll(&mut self) {
         let url: Url = urlPatterns!(self.csdsDomain, self.accountId);
-        let cachedDomains = self.cache.get(self.conf.accountId);
+        let mut cachedDomains = self.cache.get(self.conf.accountId);
         if cachedDomains.is_none() {
             let resp = reqwest::blocking::get(url)?.json::<HashMap<String, String>>()?;
+            cachedDomains = CSDSClient.convert(resp.get("baseURIs"));
+            self.cache.set(self.conf.accountId, cachedDomains);
         }
+        cachedDomains
     }
 
-    fn requestHandler(self, resp: HashMap<String, String>) {
-        let mut domains = Vec::new(10);
-
-        if (resp.get("baseURIs")) {
-            // debug here
-            domains = CSDSClient.convert(resp.get("baseURIs"));
-        }
-
-        if (domains.len() > 0) {
-            self.cache.set(self.conf.accountId, domains)
-        }
-    }
-
-    fn convert(baseURIs: String) -> Vec {
+    pub fn convert(baseURIs: String) -> Vec {
         // not implemented
         Vec::new(1)
     }

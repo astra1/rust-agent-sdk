@@ -1,12 +1,9 @@
-// extern crate hyper;
-
-#[cfg(feature = "sync")]
-pub use shared;
-
 extern crate lru;
+extern crate mio_extras;
 extern crate reqwest;
 extern crate serde;
 extern crate url;
+extern crate ws;
 
 /// Error returned by most functions.
 ///

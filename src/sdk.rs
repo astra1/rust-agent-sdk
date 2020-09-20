@@ -5,6 +5,9 @@
 use shared::structs::Config;
 use std::time::Duration;
 use tokio::net::{TcpStream, ToSocketAddrs};
+use transport::{wsPath, Transport};
+use ws::listen;
+use csdsclient::CSDSClient;
 /// Establish connection with AgentSDK websocket server;
 ///
 /// Requests are issued using the various methods of `Client`.
@@ -13,6 +16,9 @@ pub struct SDK {
     config: Config,
     accountId: u32,
     refreshSessionInterval: u32,
+    csdsClient: CSDSClient,
+
+    userId: u32,
 
     subscribeExConversations: fn(),
     subscribeAgentsState: fn(),
@@ -38,8 +44,11 @@ pub struct SDK {
 }
 
 impl SDK {
-    pub fn new(conf: Config) -> Self {
+    pub fn new(&mut self, conf: Config) -> Self {
+        // todo: Setup logging env_logger
+        
         Self {
+            csdsClient = new CSDSClient(conf),
             config,
             refreshSessionInterval: conf.refreshSessionInterval || 60000 * 1000, // 10 min
             accountId: conf.accountId,
@@ -48,63 +57,62 @@ impl SDK {
 
     fn registerRequests() {}
 
-    fn connect() {
+    fn connect(&mut self) {
+        // 1. get CSDS entries
+
+        handleCSDS("Connect#CSDS");
+        // self.config.domains = handleCSDS('connect#csds');
+
+        // 2. login
+
+        // 3. init
+
+        init();
+
+        // listen(wsPath!(&self.config), |out| Transport {
+        //     out,
+        //     ping_timeout: None,
+        //     expire_timeout: None,
+        // })
+        // .unwrap();
+    }
+
+    fn handleCSDS(&mut self, location: String) -> Result<()> {
+        let domains = self.csdsClient.getAll(location)?;
+        domains
+    }
+
+    fn handleLogin(domains, location: String) -> Result<()> {
+
+    }
+
+    fn init(config: Config) {
+
+    }
+
+    // gets a bearer token from agentVEP
+    fn login(&mut self, conf: Config, domains: Domain) {
+        assert_ne!(domains.agentVep, "", "Couldn't fetch domains");
+
+        let conf = self.config;
+
+        if conf.token {
+            self.userId = conf.userId; // for internal use
+            self.oldAgentId = format!({}.{}, conf.accountId, conf.userId); // for external use
+            return Ok(());
+        }
+
+        let loginData = Config {
+            domain: domains.agentVep,
+            ..conf,
+        }
+
+        // external.login
+
 
     }
 }
 
-/// A client that has entered pub/sub mode.
-///
-/// Once clients subscribe to a channel, they may only perform pub/sub related
-/// commands. The `Client` type is transitioned to a `Subscriber` type in order
-/// to prevent non-pub/sub methods from being called.
-#[allow(dead_code)]
-pub struct Subscriber {
-    /// The subscribed client.
-    sdk: SDK,
-
-    /// The set of channels to which the `Subscriber` is currently subscribed.
-    subscribed_channels: Vec<String>,
-}
-
-/// A message received on a subscribed channel.
-#[derive(Debug, Clone)]
-pub struct Message {
-    pub channel: String,
-    pub content: Bytes,
-}
-
-/// Establish a connection with the Redis server located at `addr`.
-///
-/// `addr` may be any type that can be asynchronously converted to a
-/// `SocketAddr`. This includes `SocketAddr` and strings. The `ToSocketAddrs`
-/// trait is the Tokio version and not the `std` version.
-///
-/// # Examples
-///
-/// ```no_run
-/// use mini_redis::client;
-///
-/// #[tokio::main]
-/// async fn main() {
-///     let client = match client::connect("localhost:6379").await {
-///         Ok(client) => client,
-///         Err(_) => panic!("failed to establish connection"),
-///     };
-/// # drop(client);
-/// }
-/// ```
-#[allow(dead_code)]
-pub async fn connect<T: ToSocketAddrs>(addr: T) -> crate::Result<SDK> {
-    // The `addr` argument is passed directly to `TcpStream::connect`. This
-    // performs any asynchronous DNS lookup and attempts to establish the TCP
-    // connection. An error at either step returns an error, which is then
-    // bubbled up to the caller of `mini_redis` connect.
-    let socket = TcpStream::connect(addr).await?;
-
-    // Initialize the connection state. This allocates read/write buffers to
-    // perform redis protocol frame parsing.
-    let connection = Connection::new(socket);
-
-    Ok(SDK { connection })
+struct Domain {
+    agentVep: String,
 }
