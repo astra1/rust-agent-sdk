@@ -1,7 +1,7 @@
 [package]
 authors = ["Maxim <astralfestival@gmail.com>"]
 name = "rust-agent-sdk"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2018"
 description = "Liveperson Agent Messaging SDK for Rust"
 keywords = ["agent", "sdk", "liveperson", "bot", "messaging"]
