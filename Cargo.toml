@@ -4,7 +4,7 @@ name = "rust-agent-sdk"
 version = "1.0.0"
 edition = "2018"
 description = "Liveperson Agent Messaging SDK for Rust"
-keywords = ["agent", "sdk", "liveperson", "liveengage", "bot", "messaging", "rust"]
+keywords = ["agent", "sdk", "liveperson", "bot", "messaging"]
 license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
