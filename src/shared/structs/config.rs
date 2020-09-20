@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+#[dervive(Serialize, Deserialize, Debug)]
 struct Config {
     accountId: u32,
     username: str,

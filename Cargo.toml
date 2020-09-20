@@ -7,25 +7,8 @@ license = "MIT"
 name = "rust-agent-sdk"
 version = "1.0.2"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 lru = "0.6.0"
-# gzip
-# flate2 = {version = "1.0", optional = true}
-# http = "0.2.1"
-# hyper = "0.13"
-# hyper-rustls = {version = "0.21", optional = true}
-# hyper-tls = {version = "0.4", optional = true}
-# lazy_static = "1.4"
-# RustCrypto: Digital Signature Algorithms
-# signature = "1.2.2"
-# check features param
-# tokio = {version = "0.2", features = ["full"]}
-# tracing = "0.1.19"
-# tracing-futures = { version = "0.2.4" }
-# tracing-subscriber = "0.2.12"
-
-[dev-dependencies]
-# Enable test-utilities in dev mode only. This is mostly for tests.
-# tokio = { version = "0.2", features = ["test-util"] }
+reqwest = {version = "0.10", features = ["blocking", "json"]}
+serde = "1.0.116"
+url = "2.1.1"

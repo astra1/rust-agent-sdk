@@ -4,6 +4,9 @@
 pub use shared;
 
 extern crate lru;
+extern crate reqwest;
+extern crate serde;
+extern crate url;
 
 /// Error returned by most functions.
 ///
