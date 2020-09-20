@@ -10,6 +10,10 @@ use tokio::net::{TcpStream, ToSocketAddrs};
 /// Requests are issued using the various methods of `Client`.
 #[allow(dead_code)]
 pub struct SDK {
+    config: Config,
+    accountId: u32,
+    refreshSessionInterval: u32,
+
     subscribeExConversations: fn(),
     subscribeAgentsState: fn(),
     subscribeRoutingTasks: fn(),
@@ -34,12 +38,18 @@ pub struct SDK {
 }
 
 impl SDK {
-    fn new(conf: Config) {
-        assert_ne!(conf.accountId, 0);
-        assert_ne!(conf.requestTimeout, 0,);
-        assert_ne!(conf.errorCheckInterval, 0,);
-        assert_ne!(conf.apiVersion, 0);
-        assert_ne!(conf.refreshSessionInterval, 0);
+    pub fn new(conf: Config) -> Self {
+        Self {
+            config,
+            refreshSessionInterval: conf.refreshSessionInterval || 60000 * 1000, // 10 min
+            accountId: conf.accountId,
+        }
+    }
+
+    fn registerRequests() {}
+
+    fn connect() {
+
     }
 }
 
@@ -97,8 +107,4 @@ pub async fn connect<T: ToSocketAddrs>(addr: T) -> crate::Result<SDK> {
     let connection = Connection::new(socket);
 
     Ok(SDK { connection })
-}
-
-impl SDK {
-    fn new(conf: Config) {}
 }

@@ -1,13 +1,9 @@
-extern crate hyper;
+// extern crate hyper;
 
 #[cfg(feature = "sync")]
 pub use shared;
 
-mod connection;
-mod frame;
-
-pub use connection::Connection;
-pub use frame::Frame;
+extern crate lru;
 
 /// Error returned by most functions.
 ///
