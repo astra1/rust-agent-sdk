@@ -2,10 +2,11 @@
 //! Provides an async connect and methods for issuing the supported commands.
 //! Uses Mini-Redis as alma mater
 
-use shared::structs::Config;
+use crate::structs::Config;
+use crate::external_services;
 use std::time::Duration;
 use tokio::net::{TcpStream, ToSocketAddrs};
-use transport::{wsPath, Transport};
+use crate::transport::{Transport};
 use ws::listen;
 use csdsclient::CSDSClient;
 /// Establish connection with AgentSDK websocket server;
@@ -19,6 +20,7 @@ pub struct SDK {
     csdsClient: CSDSClient,
 
     userId: u32,
+    agentId: u32,
 
     subscribeExConversations: fn(),
     subscribeAgentsState: fn(),
@@ -46,13 +48,13 @@ pub struct SDK {
 impl SDK {
     pub fn new(&mut self, conf: Config) -> Self {
         // todo: Setup logging env_logger
-        
-        Self {
+        self = Self {
             csdsClient = new CSDSClient(conf),
             config,
             refreshSessionInterval: conf.refreshSessionInterval || 60000 * 1000, // 10 min
             accountId: conf.accountId,
         }
+        self.connect(&self, conf);
     }
 
     fn registerRequests() {}
@@ -60,14 +62,18 @@ impl SDK {
     fn connect(&mut self) {
         // 1. get CSDS entries
 
-        handleCSDS("Connect#CSDS");
-        // self.config.domains = handleCSDS('connect#csds');
+        let domains = handleCSDS("Connect#CSDS")?;
 
         // 2. login
+        let (loginDomains, token) = login(&domains, "Connect#Login")?;
 
         // 3. init
 
-        init();
+        init(Config {
+            domain: loginDomains.facadeMsg,
+            token,
+            ..self.config
+        });
 
         // listen(wsPath!(&self.config), |out| Transport {
         //     out,
@@ -82,12 +88,10 @@ impl SDK {
         domains
     }
 
-    fn handleLogin(domains, location: String) -> Result<()> {
 
-    }
-
-    fn init(config: Config) {
-
+    fn init(&mut self, config: Config) {
+        self.requestTimeout = config.requestTimeout || 10_000;
+        self.requestTimeout = config.requestTimeout || 10_000;
     }
 
     // gets a bearer token from agentVEP
@@ -107,12 +111,46 @@ impl SDK {
             ..conf,
         }
 
-        // external.login
+        let data = external_services::login(loginData)?;
 
+        match data {
+            Ok(data, cookies) => {
+                self.agentId = data.config.userPid;
+                self.userId = data.config.userId;
+                if self.userId > 0 {
+                    self.oldAgentId = format!("{}.{}", conf.accountId, self.userId);
+                } else {
+                    return Err("Invalid login state, userId is undefined");
+                }
+
+                if data.csrf {
+                    self.jar = cookies;
+                    self.csrf = data.csrf;
+                    self.token = data.bearer;
+                    // startPeriodicRefreshSession();
+                }
+
+                Ok(data.bearer, domains);
+            }
+            Err(e) => println!("error external login {:?}", e),
+
+        }
 
     }
 }
 
 struct Domain {
     agentVep: String,
+}
+
+macro_rules! wsPath {
+    (config: Config) => {
+        format!(
+            "wss://{domain}/ws_api/account/{accountId}/messaging/brand/{token}?v=${apiVersion}",
+            domain = config.domain,
+            accountId = config.accountId,
+            token = config.token,
+            apiVersion = config.apiVersion
+        )
+    };
 }

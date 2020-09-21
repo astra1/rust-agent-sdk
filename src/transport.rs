@@ -1,18 +1,22 @@
+use crate::structs::Config;
 use mio_extras::timer::Timeout;
-use shared::structs::Config;
+use std::str::from_utf8;
 use url::Url;
-use ws::{listen, CloseCode, Handshake, Sender};
+use ws::util::Token;
+use ws::Error;
+use ws::Frame;
+use ws::{listen, CloseCode, Handler, Handshake, Message, Sender};
 
 const PING: Token = Token(1);
 const EXPIRE: Token = Token(2);
 
-struct Transport {
+pub struct Transport {
     out: Sender,
     ping_timeout: Option<Timeout>,
     expire_timeout: Option<Timeout>,
 }
 
-impl Server for Transport {
+impl Handler for Transport {
     fn on_open(&mut self, _: Handshake) -> Result<()> {
         // schedule a timeout to send a ping every 60 seconds
         self.out.timeout(60_000, PING)?;
@@ -101,18 +105,7 @@ impl Server for Transport {
     }
 }
 
-#[proc_macro]
-pub fn wsPath(config: Config) {
-    format!(
-        "wss://{domain}/ws_api/account/{accountId}/messaging/brand/{token}?v=${apiVersion}",
-        domain = config.domain,
-        accountId = config.accountId,
-        token = config.token,
-        apiVersion = config.apiVersion
-    )
-}
-
 // For accessing the default handler implementation
 struct DefaultHandler;
 
-impl Server for DefaultHandler {}
+impl Handler for DefaultHandler {}
