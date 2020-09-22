@@ -1,14 +1,10 @@
+use crate::request::{do_get_req, HttpResult};
 use crate::structs::Config;
-use hyper::{body::to_bytes, client::HttpConnector, Body, Client, Method, Request, Response};
-use hyper_tls::HttpsConnector;
+use hyper::body::to_bytes;
 use lru::LruCache;
 use serde_json::{from_slice, from_str, to_string};
 
-type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
-type HttpClient = Client<HttpsConnector<HttpConnector>>;
-type Result<T> = std::result::Result<T, Error>;
-
-type GetAllResult = Result<Vec<Domain>>;
+type GetAllResult = HttpResult<Vec<Domain>>;
 
 pub struct CSDSClient {
     cache: LruCache<String, String>,
@@ -42,7 +38,7 @@ impl CSDSClient {
         let mut cachedDomains = &self.cache.get(&self.conf.accountId.to_string());
         if cachedDomains.is_none() {
             let domains_url = url_patterns(&self.csdsDomain, &self.conf.accountId);
-            let res = do_get_req(&domains_url, &init_client()).await?;
+            let res = do_get_req(&domains_url).await?;
             let body = to_bytes(res.into_body()).await?;
             let domains: Vec<Domain> = from_slice(&body)?;
             self.cache
@@ -55,25 +51,11 @@ impl CSDSClient {
     }
 }
 
-fn init_client() -> HttpClient {
-    let https = HttpsConnector::new();
-    Client::builder().build::<_, Body>(https)
-}
-
 fn url_patterns(csds_domain: &str, account_id: &u32) -> String {
     format!(
         "https://{}/api/account/{}/service/baseURI.json?version=1.0",
         csds_domain, account_id
     )
-}
-
-async fn do_get_req(uri: &str, client: &HttpClient) -> Result<Response<Body>> {
-    let request = Request::builder()
-        .method(Method::GET)
-        .uri(uri)
-        .body(Body::empty());
-    let res = client.request(request.unwrap()).await?;
-    Ok(res)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -92,7 +74,9 @@ impl Default for Config {
             apiVersion: 0,
             appKey: String::new(),
             assertion: String::new(),
+            jwt: String::new(),
             stdTTL: 60,
+            csrf: String::new(),
             checkperiod: 30,
             csdsDomain: String::from("adminlogin.liveperson.net"),
             errorCheckInterval: 30,
