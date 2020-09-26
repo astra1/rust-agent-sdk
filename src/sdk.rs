@@ -1,6 +1,7 @@
 //! Minimal Agent SDK implemenation
 //! Provides an async connect and methods for issuing the supported commands.
 
+#[allow(dead_code)]
 use std::fmt;
 use std::rc::Rc;
 
@@ -43,53 +44,54 @@ pub struct AgentSdk {
     // accountId: u32,
 
     // refreshSessionInterval: u32,
-    csdsClient: CsdsClient,
+    csds_client: CsdsClient,
     // userId: u32,
     // agentId: u32,
 }
 
+#[allow(dead_code)]
 impl AgentSdk {
     pub fn new(config: Config) -> Result<Self> {
         let merged_conf = Config {
-            accountId: config.accountId,
+            account_id: config.account_id,
             username: config.username,
             password: config.password,
             assertion: config.assertion,
             ..Config::default()
         };
 
-        const empty_str: String = String::new();
+        const EMPTY_STR: String = String::new();
 
         // verify that an accountId is present
-        if merged_conf.accountId == empty_str {
+        if merged_conf.account_id == EMPTY_STR {
             return Err(SdkError::MissingAccountId);
         }
 
         // verify that we have all the pieces to login
-        if merged_conf.token == empty_str
-            && (merged_conf.username == empty_str || merged_conf.password == empty_str)
-            && (merged_conf.username == empty_str
-                || merged_conf.appKey == empty_str
-                || merged_conf.secret == empty_str
-                || merged_conf.accessToken == empty_str
-                || merged_conf.accessTokenSecret == empty_str)
+        if merged_conf.token == EMPTY_STR
+            && (merged_conf.username == EMPTY_STR || merged_conf.password == EMPTY_STR )
+            && (merged_conf.username == EMPTY_STR
+                || merged_conf.app_key == EMPTY_STR
+                || merged_conf.secret == EMPTY_STR
+                || merged_conf.access_token == EMPTY_STR
+                || merged_conf.access_token_secret == EMPTY_STR)
         {
             return Err(SdkError::MissingAuthData);
         }
 
         // initialize the WS requests - add them as functions to this object
-        registerRequests(consts::requests.to_vec());
+        let _res = register_requests(consts::REQUESTS.to_vec());
 
         // create the CSDS client
 
         // connect
 
         let conf_rc = Rc::new(merged_conf);
-        let accountId = conf_rc.clone().accountId.to_string();
-        let csdsDomain = &conf_rc.clone().csdsDomain;
+        let account_id = conf_rc.clone().account_id.to_string();
+        let csds_domain = &conf_rc.clone().csds_domain;
 
         Ok(AgentSdk {
-            csdsClient: CsdsClient::new(accountId, csdsDomain.to_string()),
+            csds_client: CsdsClient::new(account_id, csds_domain.to_string()),
             config: conf_rc,
         })
     }
@@ -133,14 +135,18 @@ impl AgentSdk {
     pub fn disconnect() {}
 
     // Get the bearer token of the current agent
-    pub fn getBearerToken() {}
+    pub fn get_bearer_token() {
+        unimplemented!();
+    }
 
     // Start a periodic call to refresh the HTTP session, thus prolonging the lifetime of the bearer token
     // The default time for the interval of call is 10 minutes
-    pub fn startPeriodicRefreshSession() {}
+    pub fn start_periodic_refresh_session() {
+        unimplemented!();
+    }
 
     // Asynchronously refresh the HTTP session of the agent, thus prolonging the bearer token lifetime
-    pub fn refreshSession() -> Result<()> {
+    pub fn refresh_session() -> Result<()> {
         Ok(())
     }
 
@@ -149,14 +155,14 @@ impl AgentSdk {
         Ok(())
     }
 
-    fn loginAndReconnect() -> Result<()> {
+    fn login_and_reconnect() -> Result<()> {
         Ok(())
     }
 
     fn init() {}
 
     // type UMS request type
-    fn createAndSendRequest() -> Result<()> {
+    fn create_and_send_request() -> Result<()> {
         // transform. figure out
 
         // create the request
@@ -166,65 +172,90 @@ impl AgentSdk {
     }
 
     // Reports if an async task is successful or not
-    fn emitStatusEvents() {}
+    fn emit_status_events() {}
 
     // Handle CSDS calls and emit specific events based on error
-    fn handleCSDS(_location: String) -> Result<()> {
+    fn handle_csds(_location: String) -> Result<()> {
         Ok(())
     }
 
     // Handle login calls and emit specific events based on error
-    fn handleLogin() -> Result<()> {
+    fn handle_login() -> Result<()> {
         Ok(())
     }
 
     // Handle login and reconnect and emit specific events base on error
-    fn handleLoginAndReconnect() -> Result<()> {
+    fn handle_login_and_reconnect() -> Result<()> {
         Ok(())
     }
 
     // Handle Refresh Session calls
-    fn handleRefreshSessionCall() -> Result<()> {
+    fn handle_refresh_session_call() -> Result<()> {
         Ok(())
     }
 
-    fn preCheckRefreshSession() -> Option<String> {
+    fn pre_check_refresh_session() -> Option<String> {
         Some("test".to_uppercase())
     }
 
-    fn handleMessage() {}
+    fn handle_message() {
+        unimplemented!();
+    }
 
-    fn handleSocketCreated() {}
+    fn handle_socket_created() {
+        unimplemented!();
+    }
 
-    fn queueForResponseAndSend() -> Result<()> {
+    fn queue_for_response_and_send() -> Result<()> {
         Ok(())
     }
 
-    fn queueForResponse(_id: String) {}
+    fn queue_for_response(_id: String) {
+        unimplemented!();
+    }
 
-    fn checkForErrors() {}
+    fn check_for_errors() {
+        unimplemented!();
+    }
 
-    fn handleClosed() {}
+    fn handle_closed() {
+        unimplemented!();
+    }
 
-    fn notifySocketClosedFailure() {}
+    fn notify_socket_closed_failure() {
+        unimplemented!();
+    }
 
-    fn handleNotification() {}
+    fn handle_notification() {
+        unimplemented!();
+    }
 
-    fn handleResponse() {}
+    fn handle_response() {
+        unimplemented!();
+    }
 
-    fn handleOutcome() {}
+    fn handle_outcome() {
+        unimplemented!();
+    }
 
-    fn notifyOutcome() {}
+    fn notify_outcome() {
+        unimplemented!();
+    }
 
-    fn dequeMessage() {}
+    fn deque_message() {
+        unimplemented!();
+    }
 
-    fn transformMsg() {}
+    fn transform_msg() {
+        unimplemented!();
+    }
 }
 
+#[allow(dead_code)]
 struct Domain {
-    agentVep: String,
+    agent_vep: String,
 }
 
-fn registerRequests<T>(_ws_requests: Vec<T>) -> Result<()> {
+fn register_requests<String>(_ws_requests: Vec<String>) -> Result<()> {
     Ok(())
 }

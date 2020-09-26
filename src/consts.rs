@@ -1,9 +1,11 @@
+#[allow(dead_code)]
 pub enum Events {
     Connected,
     Closed,
     Notification,
 }
 
+#[allow(dead_code)]
 pub enum Kinds {
     Request,
     Response,
@@ -12,7 +14,7 @@ pub enum Kinds {
 
 // const BROWSERS: &'static [&'static str] = &["firefox", "chrome"];
 
-pub const requests: &'static [&'static str] = &[
+pub const REQUESTS: &'static [&'static str] = &[
     ".GetClock",
     ".ams.cm.AgentRequestConversation",
     ".ams.aam.SubscribeExConversations",

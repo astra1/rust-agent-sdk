@@ -5,44 +5,48 @@ use hyper::{body::to_bytes, Body, Client, Method, Response};
 use hyper_tls::HttpsConnector;
 use serde_json::{from_slice, to_vec};
 
+#[allow(dead_code)]
 type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
+#[allow(dead_code)]
 type HttpClient = Client<HttpsConnector<HttpConnector>>;
+#[allow(dead_code)]
 type Result<T> = std::result::Result<T, Error>;
 
 use crate::structs::{Config, Login};
 
+#[allow(dead_code)]
 pub async fn login(config: &Config) -> Result<Login> {
     let url = format!(
         "https://{}/api/account/{}/login?v=1.3",
-        config.csdsDomain, config.accountId
+        config.csds_domain, config.account_id
     );
 
     let _request = Request::builder().method(Method::POST).uri(&url); //.header(key: K, value: V);
     let req_body;
 
     if config.username != "" && config.password != "" {
-        let loginBody = LoginPairBody {
+        let login_body = LoginPairBody {
             username: config.username.to_string(),
             password: config.password.to_string(),
         };
-        req_body = Body::from(to_vec(&loginBody).unwrap());
+        req_body = Body::from(to_vec(&login_body).unwrap());
     } else if config.assertion != "" {
         // todo: grabbed from nodejs lib, need to check deeper
         // TODO: remove - this is a hack against the agent vep
-        let samlBody = SamlBody {
+        let saml_body = SamlBody {
             jwt: config.jwt.to_string(),
             assertion: config.assertion.to_string(),
         };
-        req_body = Body::from(to_vec(&samlBody).unwrap());
+        req_body = Body::from(to_vec(&saml_body).unwrap());
     } else {
-        let oauthBody = OauthBody {
+        let oauth_body = OauthBody {
             username: config.username.to_string(),
-            appKey: config.appKey.to_string(),
+            app_key: config.app_key.to_string(),
             secret: config.secret.to_string(),
-            accessToken: config.accessToken.to_string(),
-            accessTokenSecret: config.accessTokenSecret.to_string(),
+            access_token: config.access_token.to_string(),
+            access_token_secret: config.access_token_secret.to_string(),
         };
-        req_body = Body::from(to_vec(&oauthBody).unwrap());
+        req_body = Body::from(to_vec(&oauth_body).unwrap());
     }
 
     let res_body = do_post_req(&url, req_body).await;
@@ -52,10 +56,11 @@ pub async fn login(config: &Config) -> Result<Login> {
     serde::export::Ok(login_res)
 }
 
+#[allow(dead_code)]
 pub async fn refresh_session(config: &Config) -> Result<()> {
     let url = format!(
         "https://{}/api/account/{}/refresh?v=1.3",
-        config.csdsDomain, config.accountId
+        config.csds_domain, config.account_id
     );
     let csrf_body = CsrfBody {
         csrf: config.csrf.to_string(),
@@ -66,6 +71,7 @@ pub async fn refresh_session(config: &Config) -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 pub async fn compile_error(
     _base_error_message: String,
     _res: &mut Response<Body>,
@@ -111,10 +117,10 @@ struct SamlBody {
 #[derive(Serialize, Deserialize)]
 struct OauthBody {
     username: String,
-    appKey: String,
+    app_key: String,
     secret: String,
-    accessToken: String,
-    accessTokenSecret: String,
+    access_token: String,
+    access_token_secret: String,
 }
 
 #[derive(Serialize, Deserialize)]

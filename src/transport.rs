@@ -55,7 +55,7 @@ impl Handler for Transport {
         match event {
             // PING timeout has occured, send a ping and reschedule
             PING => {
-                self.out.ping(now_ns().to_string().into_bytes());
+                self.out.ping(now_ns().to_string().into_bytes()).expect("Cannot parse ws-response");
                 self.ping_timeout.take();
                 self.out.timeout(5_000, PING)
             }
