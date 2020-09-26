@@ -1,3 +1,4 @@
+use crate::csdsclient::CsdsDomain;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -7,18 +8,18 @@ pub struct BaseUri {
     baseURI: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
     pub stdTTL: u32,
     pub checkperiod: u32,
     pub jwt: String,
     pub csrf: String,
-    pub accountId: u32,
+    pub accountId: String,
     pub username: String,
     pub password: String,
     pub token: String,     // a bearer token instead of username and password
     pub userId: String,    // the user id - mandatory when using token as authentication method
-    pub assertion: String, // a SAML assertion to be used instead of token or username and password
+    pub assertion: String, // a SAML assertion to be used instead of token or username and password (todo: check for XML https://knowledge.liveperson.com/security-regulations-login-sso-unified-login.html)
     pub appKey: String, // oauth1 keys needed (with username) to be used instead of assertion or token or username and password
     pub secret: String,
     pub accessToken: String,
@@ -28,6 +29,33 @@ pub struct Config {
     pub errorCheckInterval: u32, // defaults to 1000 milliseconds
     pub apiVersion: u32, // Messaging API version - defaults to 2 (version 1 is not supported anymore)
     pub refreshSessionInterval: u32,
+}
+
+impl Default for Config {
+    fn default() -> Config {
+        Config {
+            accessToken: String::new(),
+            accessTokenSecret: String::new(),
+            accountId: String::new(),
+            apiVersion: 0,
+            appKey: String::new(),
+            assertion: String::new(),
+            jwt: String::new(),
+            stdTTL: 60,
+            csrf: String::new(),
+            checkperiod: 0,
+            // csdsDomain: "adminlogin.liveperson.net".to_string(),
+            csdsDomain: String::new(),
+            errorCheckInterval: 30,
+            password: String::new(),
+            refreshSessionInterval: 30_000,
+            requestTimeout: 30_000,
+            secret: String::new(),
+            userId: String::new(),
+            username: String::new(),
+            token: String::new(),
+        }
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

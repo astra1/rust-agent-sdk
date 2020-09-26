@@ -1,14 +1,16 @@
-use crate::structs::Config;
 use mio_extras::timer::Timeout;
-use std::str::from_utf8;
-use url::Url;
+use std::time;
+
 use ws::util::Token;
-use ws::Error;
 use ws::Frame;
-use ws::{listen, CloseCode, Handler, Handshake, Message, Sender};
+use ws::{CloseCode, Handler, Handshake, Message, OpCode, Sender};
+use ws::{Error, ErrorKind};
+// use tungstenite::Error;
 
 const PING: Token = Token(1);
 const EXPIRE: Token = Token(2);
+
+type Result<T> = std::result::Result<T, Error>;
 
 pub struct Transport {
     out: Sender,
@@ -53,7 +55,7 @@ impl Handler for Transport {
         match event {
             // PING timeout has occured, send a ping and reschedule
             PING => {
-                self.out.ping(time::precise_time_ns().to_string().into())?;
+                self.out.ping(now_ns().to_string().into_bytes());
                 self.ping_timeout.take();
                 self.out.timeout(5_000, PING)
             }
@@ -89,9 +91,9 @@ impl Handler for Transport {
         // If the frame is a pong, print the round-trip time.
         // The pong should contain data from out ping, but it isn't guaranteed to.
         if frame.opcode() == OpCode::Pong {
-            if let Ok(pong) = from_utf8(frame.payload())?.parse::<u64>() {
-                let now = time::precise_time_ns();
-                println!("RTT is {:.3}ms.", (now - pong) as f64 / 1_000_000f64);
+            if let Ok(pong) = std::str::from_utf8(frame.payload())?.parse::<u128>() {
+                let now = now_ns();
+                println!("RTT is {:.3}ms.", (now - pong) as u128 / 1_000_000u128);
             } else {
                 println!("Received bad pong.");
             }
@@ -103,6 +105,10 @@ impl Handler for Transport {
         // Run default frame validation
         DefaultHandler.on_frame(frame)
     }
+}
+
+fn now_ns() -> u128 {
+    time::SystemTime::now().elapsed().unwrap().as_nanos()
 }
 
 // For accessing the default handler implementation

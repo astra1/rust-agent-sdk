@@ -1,3 +1,4 @@
+// use crate::csdsclient::CsdsDomain;
 use hyper::client::HttpConnector;
 use hyper::{Body, Client, Method, Request, Response};
 use hyper_tls::HttpsConnector;
@@ -11,11 +12,11 @@ use hyper_tls::HttpsConnector;
 /// and handled during normal execution when a partial frame is received on a
 /// socket. `std::error::Error` is implemented for `parse::Error` which allows
 /// it to be converted to `Box<dyn std::error::Error>` todo: write about 'static.
-pub type HttpError = Box<dyn std::error::Error + Send + Sync + 'static>;
+pub type HyperError = Box<dyn std::error::Error + Send + Sync + 'static>;
 pub type HttpClient = Client<HttpsConnector<HttpConnector>>;
-pub type HttpResult<T> = std::result::Result<T, HttpError>;
+pub type HttpResult<T> = std::result::Result<T, HyperError>;
 
-pub async fn do_get_req(uri: &str) -> HttpResult<Response<Body>> {
+pub async fn do_get_req(uri: String) -> HttpResult<Response<Body>> {
     let client = init_client();
     let request = Request::builder()
         // todo: DRY
@@ -31,7 +32,7 @@ pub async fn do_get_req(uri: &str) -> HttpResult<Response<Body>> {
     Ok(res)
 }
 
-pub async fn do_post_req(uri: &str, body: &Body) -> HttpResult<Response<Body>> {
+pub async fn do_post_req(uri: &str, body: Body) -> HttpResult<Response<Body>> {
     let client = init_client();
     let request = Request::builder()
         // todo: DRY
@@ -42,7 +43,7 @@ pub async fn do_post_req(uri: &str, body: &Body) -> HttpResult<Response<Body>> {
         .header("content-type", "application/json")
         .method(Method::POST)
         .uri(uri)
-        .body(*body);
+        .body(body);
 
     let res = client.request(request.unwrap()).await?;
 

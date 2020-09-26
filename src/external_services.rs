@@ -17,36 +17,36 @@ pub async fn login(config: &Config) -> Result<Login> {
         config.csdsDomain, config.accountId
     );
 
-    let mut request = Request::builder().method(Method::POST).uri(&url); //.header(key: K, value: V);
-    let mut req_body = Body::empty();
+    let _request = Request::builder().method(Method::POST).uri(&url); //.header(key: K, value: V);
+    let req_body;
 
     if config.username != "" && config.password != "" {
         let loginBody = LoginPairBody {
-            username: config.username,
-            password: config.password,
+            username: config.username.to_string(),
+            password: config.password.to_string(),
         };
         req_body = Body::from(to_vec(&loginBody).unwrap());
     } else if config.assertion != "" {
         // todo: grabbed from nodejs lib, need to check deeper
         // TODO: remove - this is a hack against the agent vep
         let samlBody = SamlBody {
-            jwt: config.jwt,
-            assertion: config.assertion,
+            jwt: config.jwt.to_string(),
+            assertion: config.assertion.to_string(),
         };
         req_body = Body::from(to_vec(&samlBody).unwrap());
     } else {
         let oauthBody = OauthBody {
-            username: config.username,
-            appKey: config.appKey,
-            secret: config.secret,
-            accessToken: config.accessToken,
-            accessTokenSecret: config.accessTokenSecret,
+            username: config.username.to_string(),
+            appKey: config.appKey.to_string(),
+            secret: config.secret.to_string(),
+            accessToken: config.accessToken.to_string(),
+            accessTokenSecret: config.accessTokenSecret.to_string(),
         };
         req_body = Body::from(to_vec(&oauthBody).unwrap());
     }
 
-    let res = do_post_req(&url, &req_body).await?;
-    let body_bytes = to_bytes(res.into_body()).await?;
+    let res_body = do_post_req(&url, req_body).await;
+    let body_bytes = to_bytes(res_body.unwrap()).await?;
     let login_res: Login = from_slice(&body_bytes)?;
 
     serde::export::Ok(login_res)
@@ -57,36 +57,42 @@ pub async fn refresh_session(config: &Config) -> Result<()> {
         "https://{}/api/account/{}/refresh?v=1.3",
         config.csdsDomain, config.accountId
     );
-    let csrf_body = CsrfBody { csrf: config.csrf };
+    let csrf_body = CsrfBody {
+        csrf: config.csrf.to_string(),
+    };
     let req_body = Body::from(to_vec(&csrf_body)?);
 
-    let res = do_post_req(&url, &req_body).await?;
-    let res_body_bytes = to_bytes(res.into_body()).await?;
+    do_post_req(&url, req_body).await?;
     Ok(())
 }
 
 pub async fn compile_error(
-    base_error_message: String,
-    err: Error,
-    res: Response<Body>,
-    body: Body,
+    _base_error_message: String,
+    _res: &mut Response<Body>,
+    _body: Body,
 ) -> Result<()> {
-    if res.status().is_client_error() || res.status().is_server_error() {
-        let bytes = to_bytes(res.into_body()).await?;
-        let error_message = String::from_utf8_lossy(&bytes);
-        return Err(format!(
-            "{}: {} {}",
-            base_error_message,
-            error_message,
-            res.status()
-        ));
-    } else if res.status().is_success() == false {
-        let bytes = to_bytes(res.into_body()).await?;
-        let error_message = String::from_utf8_lossy(&bytes);
-        return Err(format!("{}: {}", base_error_message, error_message));
-    } else {
-        return Err(format!("{}: {}", base_error_message, err));
-    }
+    Ok(())
+    // if res.status().is_client_error() || res.status().is_server_error() {
+    //     let bytes = to_bytes(res.into_body()).await.unwrap();
+    //     let error_message = String::from_utf8_lossy(&bytes);
+    //     return Err(format!("{}: {} {}", base_error_message, error_message, res.status()).into());
+    // } else if res.status().is_success() == false {
+    //     let bytes = to_bytes(res.into_body()).await?;
+    //     let error_message = String::from_utf8_lossy(&bytes);
+    //     return Err(format!(
+    //         "{}: {}",
+    //         base_error_message.to_string(),
+    //         error_message.to_string()
+    //     )
+    //     .into());
+    // } else {
+    //     return Err(format!(
+    //         "{}: {}",
+    //         base_error_message.to_string(),
+    //         String::from("test err")
+    //     )
+    //     .into());
+    // }
     // return None;
 }
 
