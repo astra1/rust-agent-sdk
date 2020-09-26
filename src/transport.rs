@@ -1,18 +1,24 @@
 use mio_extras::timer::Timeout;
-use shared::structs::Config;
-use url::Url;
-use ws::{listen, CloseCode, Handshake, Sender};
+use std::time;
+
+use ws::util::Token;
+use ws::Frame;
+use ws::{CloseCode, Handler, Handshake, Message, OpCode, Sender};
+use ws::{Error, ErrorKind};
+// use tungstenite::Error;
 
 const PING: Token = Token(1);
 const EXPIRE: Token = Token(2);
 
-struct Transport {
+type Result<T> = std::result::Result<T, Error>;
+
+pub struct Transport {
     out: Sender,
     ping_timeout: Option<Timeout>,
     expire_timeout: Option<Timeout>,
 }
 
-impl Server for Transport {
+impl Handler for Transport {
     fn on_open(&mut self, _: Handshake) -> Result<()> {
         // schedule a timeout to send a ping every 60 seconds
         self.out.timeout(60_000, PING)?;
@@ -49,7 +55,7 @@ impl Server for Transport {
         match event {
             // PING timeout has occured, send a ping and reschedule
             PING => {
-                self.out.ping(time::precise_time_ns().to_string().into())?;
+                self.out.ping(now_ns().to_string().into_bytes()).expect("Cannot parse ws-response");
                 self.ping_timeout.take();
                 self.out.timeout(5_000, PING)
             }
@@ -85,9 +91,9 @@ impl Server for Transport {
         // If the frame is a pong, print the round-trip time.
         // The pong should contain data from out ping, but it isn't guaranteed to.
         if frame.opcode() == OpCode::Pong {
-            if let Ok(pong) = from_utf8(frame.payload())?.parse::<u64>() {
-                let now = time::precise_time_ns();
-                println!("RTT is {:.3}ms.", (now - pong) as f64 / 1_000_000f64);
+            if let Ok(pong) = std::str::from_utf8(frame.payload())?.parse::<u128>() {
+                let now = now_ns();
+                println!("RTT is {:.3}ms.", (now - pong) as u128 / 1_000_000u128);
             } else {
                 println!("Received bad pong.");
             }
@@ -101,18 +107,11 @@ impl Server for Transport {
     }
 }
 
-#[proc_macro]
-pub fn wsPath(config: Config) {
-    format!(
-        "wss://{domain}/ws_api/account/{accountId}/messaging/brand/{token}?v=${apiVersion}",
-        domain = config.domain,
-        accountId = config.accountId,
-        token = config.token,
-        apiVersion = config.apiVersion
-    )
+fn now_ns() -> u128 {
+    time::SystemTime::now().elapsed().unwrap().as_nanos()
 }
 
 // For accessing the default handler implementation
 struct DefaultHandler;
 
-impl Server for DefaultHandler {}
+impl Handler for DefaultHandler {}

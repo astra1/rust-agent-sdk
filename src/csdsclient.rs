@@ -1,65 +1,65 @@
+#[allow(dead_code)]
+use crate::request::{do_get_req, HttpResult};
+// use crate::structs::Config;
+use hyper::body::to_bytes;
 use lru::LruCache;
-use reqwest::Result;
-use serde::{Deserialize, Serialize};
-use shared::structs::{BaseUri, Config};
-use std::collections::HashMap;
-use url::{ParseError, Url};
+use serde_json::{from_slice, from_str, to_string};
 
-struct CSDSClient {
-    cache: LruCache,
-    conf: Config,
-    csdsDomain: String,
+#[allow(dead_code)]
+type GetAllResult = HttpResult<Vec<CsdsDomain>>;
 
-    getAll: fn(Future<T>),
-
-    requestHandler: fn(),
-
-    convert: fn(HashMap),
+#[allow(dead_code)]
+pub struct CsdsClient {
+    cache: LruCache<String, String>,
+    account_id: String,
+    csds_domain: String, // conf: Config,
 }
 
-pub impl CSDSClient {
-    fn new(conf: Config) -> Self {
-        Self {
-            cache,
-            conf: Config {
-                conf,
-                ..Default::default()
-            },
-            csdsDomain: "adminlogin.liveperson.net",
+impl CsdsClient {
+    pub fn new(account_id: String, csds_domain: String) -> Self {
+        CsdsClient {
+            cache: LruCache::new(20),
+            account_id,
+            csds_domain,
         }
     }
 
-    pub fn getAll(&mut self) {
-        let url: Url = urlPatterns!(self.csdsDomain, self.accountId);
-        let mut cachedDomains = self.cache.get(self.conf.accountId);
-        if cachedDomains.is_none() {
-            let resp = reqwest::blocking::get(url)?.json::<HashMap<String, String>>()?;
-            cachedDomains = CSDSClient.convert(resp.get("baseURIs"));
-            self.cache.set(self.conf.accountId, cachedDomains);
-        }
-        cachedDomains
-    }
-
-    pub fn convert(baseURIs: String) -> Vec {
+    #[allow(dead_code)]
+    pub fn convert(_base_uris: String) -> Vec<u32> {
         // not implemented
-        Vec::new(1)
+        vec![1]
     }
-}
 
-impl Default for Config {
-    fn default() -> Config {
-        Config {
-            stdTTL: 60,
-            checkperiod: 30,
-            csdsDomain: "adminlogin.liveperson.net",
+    #[allow(dead_code)]
+    pub async fn getll(&mut self) -> GetAllResult {
+        let acc_id = &self.account_id;
+        // pub async fn getAll(&self) -> impl Future<Output = Domain> {
+        let mut cached_domains = self.cache.get(acc_id);
+        if cached_domains.is_none() {
+            let domains = csds_url(&self.csds_domain, &self.account_id);
+            let res = do_get_req(domains).await?;
+            let body = to_bytes(res.into_body()).await?;
+            let domains: Vec<CsdsDomain> = from_slice(&body)?;
+            self.cache.put(acc_id.to_string(), to_string(&domains)?);
+            cached_domains = self.cache.get(&self.account_id);
         }
+        let data = cached_domains.unwrap();
+        let domains: Vec<CsdsDomain> = from_str(&data)?;
+        Ok(domains)
     }
 }
 
-#[proc_macro]
-pub fn urlPatterns(csdsDomain: String, accountId: u32) -> Url {
-    Url::parse(format!(
-        "https://${csdsDomain}/api/account/${accountId}/service/baseURI.json?version=1.0",
-        csdsDomain, accountId
-    ))
+#[allow(dead_code)]
+fn csds_url(csds_base_domain: &String, account_id: &String) -> String {
+    format!(
+        "https://{}/api/account/{}/service/baseURI.json?version=1.0",
+        csds_base_domain, account_id
+    )
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CsdsDomain {
+    pub service: String, // liveEngageUI | visitorFeed | etool
+    pub account: String, // EXAMPLE123
+    pub base_uri: String, // lo.le1.liveperson.net | lo.v-feed.liveperson.net | z2.etool.liveperson.net
 }
